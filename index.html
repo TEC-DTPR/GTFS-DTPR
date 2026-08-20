@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Red Regional · Visor GTFS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+  <!-- ---------------- Topbar ---------------- -->
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <div class="brand-txt">
+        <strong>RED REGIONAL</strong>
+        <span>Visor GTFS · DTPR</span>
+      </div>
+    </div>
+    <div class="topbar-meta">
+      <div class="stamp">
+        <span class="stamp-label">Datos actualizados</span>
+        <span class="stamp-val" id="updated">—</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ---------------- Sidebar zonas ---------------- -->
+  <aside class="sidebar" id="sidebar">
+    <div class="side-head">
+      <label class="side-title" for="zone-search">Zonas reguladas</label>
+      <input id="zone-search" class="zone-search" type="search"
+             placeholder="Buscar zona…" autocomplete="off">
+    </div>
+    <nav class="zone-list" id="zone-list" aria-label="Listado de zonas"></nav>
+  </aside>
+
+  <!-- ---------------- Main ---------------- -->
+  <main class="main">
+    <!-- Encabezado de zona + metricas -->
+    <section class="zone-header">
+      <h1 id="zone-name" class="zone-name">Selecciona una zona</h1>
+      <div class="daychips" id="daychips" hidden>
+        <button data-day="laboral" class="daychip is-on">Laboral</button>
+        <button data-day="sabado"  class="daychip">Sábado</button>
+        <button data-day="domingo" class="daychip">Domingo</button>
+      </div>
+    </section>
+
+    <section class="metrics" id="metrics" aria-live="polite"></section>
+
+    <!-- Mapa + panel derecho -->
+    <section class="stage">
+      <div class="map-wrap">
+        <div id="map"></div>
+
+        <!-- Controles de capa -->
+        <div class="map-ctl">
+          <button id="tg-routes" class="ctl-btn is-on" title="Mostrar/ocultar trazados">Trazados</button>
+          <button id="tg-stops"  class="ctl-btn is-on" title="Mostrar/ocultar paradas">Paradas</button>
+        </div>
+
+        <!-- Signature: tótem de parada -->
+        <div class="totem" id="totem" hidden>
+          <button class="totem-close" id="totem-close" aria-label="Cerrar">×</button>
+          <div class="totem-top">
+            <span class="totem-kicker">Parada</span>
+            <span class="totem-id" id="totem-id">—</span>
+          </div>
+          <div class="totem-name" id="totem-name">—</div>
+          <div class="totem-sub" id="totem-sub">Servicios que pasan</div>
+          <ul class="totem-list" id="totem-list"></ul>
+        </div>
+      </div>
+
+      <div class="side-panel">
+        <div class="panel">
+          <div class="panel-head">
+            <h2>Perfil de frecuencia</h2>
+            <span class="panel-note" id="freq-note">salidas por hora</span>
+          </div>
+          <div class="chart-box"><canvas id="freq-chart"></canvas></div>
+        </div>
+
+        <div class="panel legend-panel">
+          <div class="panel-head"><h2>Servicios</h2><span class="panel-note" id="legend-count"></span></div>
+          <ul class="legend" id="legend"></ul>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- overlay de carga -->
+  <div class="loader" id="loader"><div class="loader-bar"></div><span>Cargando red…</span></div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJ2GA2CY6nzT/plfZ1JlG7GD7q0zY=" crossorigin=""></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
