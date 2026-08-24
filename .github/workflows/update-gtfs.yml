@@ -2,9 +2,8 @@ name: Actualizar GTFS y publicar
 
 on:
   schedule:
-    # 10:00 UTC ≈ 06:00–07:00 en Chile continental. Ajusta a gusto.
     - cron: '0 10 * * *'
-  workflow_dispatch:        # permite correrlo a mano
+  workflow_dispatch:
   push:
     branches: [main]
     paths:
@@ -32,13 +31,15 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-          cache: pip
 
       - name: Instalar dependencias
         run: pip install -r scripts/requirements.txt
 
       - name: Procesar los 21 GTFS
         run: python scripts/process_gtfs.py
+
+      - name: Cruce censo (buffer 200 m sobre trazados)
+        run: python scripts/cruce_censo.py
 
       - name: Armar sitio estático
         run: |
