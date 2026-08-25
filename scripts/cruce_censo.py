@@ -3,37 +3,31 @@
 """
 cruce_censo.py  (Fase 2 - nube)
 -------------------------------
-Para cada zona que tenga censo_manzanas/<slug>.geojson, hace un buffer de 200 m
-sobre los TRAZADOS (routes.geojson generado por process_gtfs.py), lo intersecta
-con las manzanas censales ponderando por fraccion de area, y escribe:
+Para cada zona con censo_manzanas/<slug>.geojson, determina qué manzanas están
+a <= 200 m de los TRAZADOS (routes.geojson) mediante join espacial por distancia
+(sin construir buffers-unión, que se colgaban en zonas con cientos de servicios),
+y escribe data/<slug>/censo.json { "zona": {...}, "servicios": {...} }.
 
-    data/<slug>/censo.json   { "zona": {...}, "servicios": { "<ss>": {...} } }
-
-Se ejecuta DESPUES de process_gtfs.py (necesita data/<slug>/routes.geojson).
-Si una zona no tiene censo_manzanas/<slug>.geojson, se salta sin error.
-
+Corre DESPUES de process_gtfs.py. Zona sin archivo se salta.
 Requisitos: geopandas, shapely, pyproj
 """
 
-import json
 import gc
+import json
 import re
-import sys
 from pathlib import Path
 
 import geopandas as gpd
 import pandas as pd
-from shapely.ops import unary_union
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = ROOT / "data"
 CENSO_DIR = ROOT / "censo_manzanas"
 
 BUFFER_M = 200
-CRS_GEO = "EPSG:4674"     # SIRGAS 2000 geografico (censo)
-CRS_MET = "EPSG:32719"    # UTM 19S metrico (Chile continental)
+CRS_GEO = "EPSG:4674"
+CRS_MET = "EPSG:32719"
 
-# campos que se SUMAN ponderados por fraccion de area
 POB_FIELDS = [
     "n_per", "n_hombres", "n_mujeres",
     "n_edad_0_5", "n_edad_6_1", "n_edad_14_", "n_edad_18_",
@@ -41,7 +35,6 @@ POB_FIELDS = [
     "n_transpor", "n_transp_1", "n_transp_2", "n_transp_3",
     "n_transp_4", "n_transp_5", "n_transp_6",
 ]
-# indices que se PROMEDIAN ponderados por poblacion (0 = sin dato -> excluir)
 IDX_FIELDS = ["dim_acc", "dim_soc"]
 
 
@@ -50,7 +43,6 @@ def log(*a):
 
 
 def load_manzanas(paths):
-    """Carga una o varias partes (geojson/parquet) de una zona y las concatena."""
     parts = []
     for path in paths:
         g = gpd.read_file(path)
@@ -64,78 +56,47 @@ def load_manzanas(paths):
             g[c] = 0
         g[c] = pd.to_numeric(g[c], errors="coerce").fillna(0)
     g = g[g.geometry.notna() & ~g.geometry.is_empty].copy()
-    # repara geometrias invalidas (auto-intersecciones tipicas del shapefile)
     inval = ~g.geometry.is_valid
     if inval.any():
         try:
             g.loc[inval, "geometry"] = g.loc[inval, "geometry"].make_valid()
         except Exception:
             g.loc[inval, "geometry"] = g.loc[inval, "geometry"].buffer(0)
-        g = g[g.geometry.notna() & ~g.geometry.is_empty].copy()
-        g = g[g.geometry.is_valid].copy()
-    g["_area_mz"] = g.geometry.area
-    g = g[g["_area_mz"] > 0].copy()
+        g = g[g.geometry.notna() & ~g.geometry.is_empty & g.geometry.is_valid].copy()
+    g = g.reset_index(drop=True)
     return g
 
 
-def buffer_union_lotes(geoms, dist, lote=400):
-    """Buffer de cada geometría y unión por lotes. Mucho más liviano en RAM que
-    unary_union de miles de líneas crudas de golpe."""
-    import numpy as np
-    geoms = list(geoms)
-    if not geoms:
-        return None
-    parciales = []
-    for i in range(0, len(geoms), lote):
-        sub = geoms[i:i + lote]
-        try:
-            u = unary_union(sub).buffer(dist)
-        except Exception:
-            u = unary_union([g.buffer(0) for g in sub]).buffer(dist)
-        parciales.append(u)
-    return unary_union(parciales) if len(parciales) > 1 else parciales[0]
-
-
-def aggregate_in_buffer(manz, buffer_geom, sindex=None):
-    """Recorta manzanas al buffer y agrega campos ponderando por fraccion de area.
-    Usa el indice espacial para tocar solo las manzanas candidatas (rapido y liviano)."""
-    # 1) prefiltro por bounding box via indice espacial
-    if sindex is not None:
-        idx = list(sindex.query(buffer_geom, predicate="intersects"))
-        if not idx:
-            return None
-        cand = manz.iloc[idx]
-    else:
-        cand = manz[manz.geometry.intersects(buffer_geom)]
-    if cand.empty:
-        return None
-
-    # 2) interseccion solo sobre candidatas (vectorizado, con reparacion puntual)
-    geoms = cand.geometry.values
+def manzanas_cercanas(manz, lineas_gdf, dist=BUFFER_M):
+    """Índices de manzanas cuya geometría está a <= dist de alguna línea.
+    Usa sjoin con predicate dwithin (rápido, sin construir buffers)."""
+    left = manz[["geometry"]].copy()
+    right = gpd.GeoDataFrame(geometry=list(lineas_gdf), crs=manz.crs)
     try:
-        inter = geoms.intersection(buffer_geom)
-    except Exception:
-        inter = geoms.buffer(0).intersection(buffer_geom.buffer(0))
+        j = gpd.sjoin(left, right, how="inner", predicate="dwithin", distance=dist)
+    except TypeError:
+        # geopandas viejo sin 'distance' en dwithin: usa buffer del lado derecho
+        rb = right.copy()
+        rb["geometry"] = rb.geometry.buffer(dist)
+        j = gpd.sjoin(left, rb, how="inner", predicate="intersects")
+    return manz.index.isin(j.index.unique())
 
-    clip = cand.copy()
-    clip["geometry"] = inter
-    clip = clip[clip.geometry.notna() & ~clip.geometry.is_empty].copy()
-    if clip.empty:
+
+def agregar(manz, mask):
+    """Suma los campos de las manzanas seleccionadas (conteo entero, sin fracción
+    de área: una manzana a <=200 m se cuenta completa — criterio de cobertura)."""
+    sel = manz[mask]
+    if sel.empty:
         return None
-
-    clip["_frac"] = (clip.geometry.area / clip["_area_mz"]).clip(0, 1)
-
     out = {}
     for c in POB_FIELDS:
-        out[c] = int(round(float((clip[c] * clip["_frac"]).sum())))
-
-    w = clip["n_per"] * clip["_frac"]
+        out[c] = int(sel[c].sum())
     for c in IDX_FIELDS:
-        mask = clip[c] > 0
-        wsum = float(w[mask].sum())
-        out[c] = round(float((clip.loc[mask, c] * w[mask]).sum() / wsum), 3) if wsum > 0 else None
-
-    out["n_manzanas"] = int(len(clip))
+        m = sel[c] > 0
+        w = sel.loc[m, "n_per"]
+        wsum = float(w.sum())
+        out[c] = round(float((sel.loc[m, c] * w).sum() / wsum), 3) if wsum > 0 else None
+    out["n_manzanas"] = int(len(sel))
     return out
 
 
@@ -156,55 +117,46 @@ def process_zone(slug, manz_paths):
 
     manz = load_manzanas(manz_paths)
     log(f"[{slug}]   manzanas cargadas: {len(manz):,}")
-    _ = manz.sindex   # fuerza construir el índice una vez
-    sindex = manz.sindex
 
-    # ---- buffer de zona: unir trazados por lotes (evita un unary_union gigante) ----
-    zona_buf = buffer_union_lotes(routes.geometry.values, BUFFER_M)
-    zona = aggregate_in_buffer(manz, zona_buf, sindex)
-    del zona_buf
-    gc.collect()
-    log(f"[{slug}]   zona lista, procesando {routes['servicio'].nunique() if 'servicio' in routes.columns else 0} servicios…")
+    # ---- zona: manzanas cercanas a CUALQUIER trazado ----
+    mask_zona = manzanas_cercanas(manz, routes.geometry.values, BUFFER_M)
+    zona = agregar(manz, mask_zona)
+    nserv = routes["servicio"].nunique() if "servicio" in routes.columns else 0
+    log(f"[{slug}]   zona lista ({int(mask_zona.sum()):,} manzanas), {nserv} servicios…")
 
-    # ---- buffer por servicio ----
+    # ---- por servicio ----
     servicios = {}
     if "servicio" in routes.columns:
         for ss, grp in routes.groupby("servicio"):
             if not str(ss).strip():
                 continue
-            buf = buffer_union_lotes(grp.geometry.values, BUFFER_M)
-            agg = aggregate_in_buffer(manz, buf, sindex)
+            mask_ss = manzanas_cercanas(manz, grp.geometry.values, BUFFER_M)
+            agg = agregar(manz, mask_ss)
             if agg:
                 servicios[str(ss)] = agg
 
-    out = {
-        "buffer_m": BUFFER_M,
-        "zona": zona or {},
-        "servicios": servicios,
-    }
+    out = {"buffer_m": BUFFER_M, "zona": zona or {}, "servicios": servicios}
     (DATA_DIR / slug / "censo.json").write_text(
         json.dumps(out, ensure_ascii=False), encoding="utf-8")
     npob = (zona or {}).get("n_per", 0)
     log(f"[{slug}] censo OK · {npob:,} hab servidos · {len(servicios)} servicios")
-    del manz, sindex, routes
+    del manz, routes
     gc.collect()
     return True
 
 
 def run():
     if not CENSO_DIR.exists():
-        log(f"No existe {CENSO_DIR} — nada que cruzar. (Sube censo_manzanas/<slug>.geojson)")
+        log(f"No existe {CENSO_DIR} — nada que cruzar.")
         return
     files = sorted(list(CENSO_DIR.glob("*.geojson")) + list(CENSO_DIR.glob("*.parquet")))
     if not files:
         log("censo_manzanas/ vacío — nada que cruzar.")
         return
 
-    # agrupa por slug: "rm-sur.geojson" y "rm-sur_1.geojson"/"rm-sur_2" -> "rm-sur"
-    import re
     grupos = {}
     for f in files:
-        base = re.sub(r"_\d+$", "", f.stem)   # quita sufijo _1, _2, …
+        base = re.sub(r"_\d+$", "", f.stem)
         grupos.setdefault(base, []).append(f)
 
     ok = 0
