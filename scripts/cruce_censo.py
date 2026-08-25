@@ -16,6 +16,8 @@ Requisitos: geopandas, shapely, pyproj
 """
 
 import json
+import gc
+import re
 import sys
 from pathlib import Path
 
@@ -74,6 +76,24 @@ def load_manzanas(paths):
     g["_area_mz"] = g.geometry.area
     g = g[g["_area_mz"] > 0].copy()
     return g
+
+
+def buffer_union_lotes(geoms, dist, lote=400):
+    """Buffer de cada geometría y unión por lotes. Mucho más liviano en RAM que
+    unary_union de miles de líneas crudas de golpe."""
+    import numpy as np
+    geoms = list(geoms)
+    if not geoms:
+        return None
+    parciales = []
+    for i in range(0, len(geoms), lote):
+        sub = geoms[i:i + lote]
+        try:
+            u = unary_union(sub).buffer(dist)
+        except Exception:
+            u = unary_union([g.buffer(0) for g in sub]).buffer(dist)
+        parciales.append(u)
+    return unary_union(parciales) if len(parciales) > 1 else parciales[0]
 
 
 def aggregate_in_buffer(manz, buffer_geom, sindex=None):
@@ -135,11 +155,16 @@ def process_zone(slug, manz_paths):
         return False
 
     manz = load_manzanas(manz_paths)
-    sindex = manz.sindex   # índice espacial: se construye una sola vez por zona
+    log(f"[{slug}]   manzanas cargadas: {len(manz):,}")
+    _ = manz.sindex   # fuerza construir el índice una vez
+    sindex = manz.sindex
 
-    # ---- buffer de zona (union de todos los trazados) ----
-    zona_buf = unary_union(routes.geometry.values).buffer(BUFFER_M)
+    # ---- buffer de zona: unir trazados por lotes (evita un unary_union gigante) ----
+    zona_buf = buffer_union_lotes(routes.geometry.values, BUFFER_M)
     zona = aggregate_in_buffer(manz, zona_buf, sindex)
+    del zona_buf
+    gc.collect()
+    log(f"[{slug}]   zona lista, procesando {routes['servicio'].nunique() if 'servicio' in routes.columns else 0} servicios…")
 
     # ---- buffer por servicio ----
     servicios = {}
@@ -147,7 +172,7 @@ def process_zone(slug, manz_paths):
         for ss, grp in routes.groupby("servicio"):
             if not str(ss).strip():
                 continue
-            buf = unary_union(grp.geometry.values).buffer(BUFFER_M)
+            buf = buffer_union_lotes(grp.geometry.values, BUFFER_M)
             agg = aggregate_in_buffer(manz, buf, sindex)
             if agg:
                 servicios[str(ss)] = agg
@@ -161,6 +186,8 @@ def process_zone(slug, manz_paths):
         json.dumps(out, ensure_ascii=False), encoding="utf-8")
     npob = (zona or {}).get("n_per", 0)
     log(f"[{slug}] censo OK · {npob:,} hab servidos · {len(servicios)} servicios")
+    del manz, sindex, routes
+    gc.collect()
     return True
 
 
