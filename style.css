@@ -1,0 +1,244 @@
+/* ============================================================
+   Red Movilidad · Visor GTFS
+   Identidad: paleta oficial Red (Pantone 186 C) + tipografías
+   oficiales TS Info / TS Mapa 2018. Tema híbrido: consola oscura
+   con acento rojo Red y detalles del sistema gráfico.
+   ============================================================ */
+@font-face{font-family:'TS Info';src:url('fonts/tsinfo-regular.woff2') format('woff2');font-weight:400;font-display:swap}
+@font-face{font-family:'TS Info';src:url('fonts/tsinfo-gruesa.woff2') format('woff2');font-weight:700;font-display:swap}
+@font-face{font-family:'TS Mapa';src:url('fonts/tsmapa-ligera.woff2') format('woff2');font-weight:300;font-display:swap}
+@font-face{font-family:'TS Mapa';src:url('fonts/tsmapa-regular.woff2') format('woff2');font-weight:400;font-display:swap}
+@font-face{font-family:'TS Mapa';src:url('fonts/tsmapa-gruesa.woff2') format('woff2');font-weight:700;font-display:swap}
+
+:root{
+  /* paleta oficial Red Movilidad */
+  --red:       #C8102E;   /* Pantone 186 C */
+  --red-2:     #E11B38;   /* rojo un poco más claro para hover */
+  --naranjo:   #FF9E1B;   /* Pantone 1375 C (acento secundario) */
+  --gris:      #888B8D;   /* Cool Gray 8 C */
+
+  /* consola oscura */
+  --bg:        #0E1116;
+  --panel:     #161A21;
+  --panel-2:   #1E242D;
+  --line:      #2A313C;
+  --line-soft: #20262F;
+  --ink:       #EDF0F3;
+  --ink-dim:   #97A0AB;
+  --ink-faint: #626C78;
+
+  --accent:    var(--red);
+  --accent-2:  #FF5A6E;
+
+  --r:10px; --r-sm:7px;
+  --shadow:0 12px 34px rgba(0,0,0,.5);
+  --sans:'TS Info','Helvetica Neue',system-ui,sans-serif;   /* UI y datos */
+  --disp:'TS Mapa','TS Info',system-ui,sans-serif;          /* títulos y cifras */
+  --mono:'TS Info',ui-monospace,monospace;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.4;-webkit-font-smoothing:antialiased}
+button{font-family:inherit;cursor:pointer}
+h1,h2,h3{margin:0;font-family:var(--disp);font-weight:700}
+
+#app{display:grid;height:100vh;grid-template-columns:266px 1fr;grid-template-rows:56px 1fr;
+  grid-template-areas:"top top" "side main"}
+
+/* ---------- Topbar ---------- */
+.topbar{grid-area:top;display:flex;align-items:center;justify-content:space-between;padding:0 18px;background:var(--panel);border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:12px}
+/* logo Red: bolita + palabra */
+.brand-logo{display:flex;align-items:center;gap:8px;font-family:var(--disp);font-weight:700;font-size:22px;color:var(--red);line-height:1;letter-spacing:-.01em}
+.brand-logo .dot{width:11px;height:11px;border-radius:50%;background:var(--red);flex:none;box-shadow:0 0 14px rgba(200,16,46,.5)}
+.brand-txt{display:flex;flex-direction:column;line-height:1.1;border-left:1px solid var(--line);padding-left:12px}
+.brand-txt strong{font-family:var(--disp);letter-spacing:.02em;font-size:12.5px;color:var(--ink)}
+.brand-txt span{font-size:10.5px;color:var(--ink-dim)}
+.stamp{display:flex;flex-direction:column;align-items:flex-end;line-height:1.15}
+.stamp-label{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-faint)}
+.stamp-val{font-size:12px;color:var(--naranjo)}
+
+/* ---------- Sidebar ---------- */
+.sidebar{grid-area:side;background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
+.side-head{padding:14px 14px 10px;border-bottom:1px solid var(--line-soft)}
+.side-title{display:block;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:8px}
+.zone-search{width:100%;background:var(--bg);border:1px solid var(--line);color:var(--ink);border-radius:var(--r-sm);padding:8px 10px;font-family:var(--sans);font-size:13px;outline:none}
+.zone-search:focus{border-color:var(--red);box-shadow:0 0 0 2px rgba(200,16,46,.18)}
+.zone-list{overflow-y:auto;padding:8px;flex:1;min-height:0}
+.zt-head{display:grid;grid-template-columns:1fr auto auto;gap:8px;padding:4px 10px 6px;font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-faint);border-bottom:1px solid var(--line-soft);margin-bottom:4px}
+.zt-head span:not(:first-child){text-align:right;min-width:34px}
+.zone-item{display:grid;grid-template-columns:1fr auto auto;align-items:baseline;gap:8px;width:100%;text-align:left;background:transparent;border:1px solid transparent;color:var(--ink-dim);padding:7px 10px;border-radius:var(--r-sm);font-size:13px;transition:background .12s,color .12s,border-color .12s}
+.zone-item:hover{background:var(--panel-2);color:var(--ink)}
+.zone-item.is-active{background:var(--panel-2);color:var(--ink);border-color:var(--line);box-shadow:inset 3px 0 0 var(--red)}
+.zone-item .zi-name{font-weight:400}
+.zone-item .zi-pob{font-size:11.5px;color:var(--ink);font-variant-numeric:tabular-nums;text-align:right;min-width:34px}
+.zone-item .zi-tp{font-size:11px;color:var(--naranjo);text-align:right;min-width:34px}
+.zone-item.is-error{color:var(--red);opacity:.6;cursor:not-allowed}
+
+/* ---------- Main ---------- */
+.main{grid-area:main;min-width:0;min-height:0;display:flex;flex-direction:column;padding:16px;gap:14px;overflow-y:auto}
+.zone-header{display:flex;align-items:center;justify-content:space-between;gap:16px;flex:none}
+.zone-name{font-size:26px;letter-spacing:-.01em;font-weight:700}
+.zone-actions{display:flex;align-items:center;gap:10px}
+.dl-btn{display:inline-flex;align-items:center;gap:7px;background:transparent;border:1px solid var(--line);color:var(--ink-dim);padding:7px 13px;border-radius:8px;font-size:12.5px;text-decoration:none;transition:all .12s}
+.dl-btn:hover{color:#fff;border-color:var(--red);background:var(--red)}
+.dl-btn .dl-ico{width:14px;height:14px;flex:none}
+
+.daychips{display:flex;gap:6px;background:var(--panel);padding:4px;border-radius:9px;border:1px solid var(--line)}
+.daychip{border:0;background:transparent;color:var(--ink-dim);padding:6px 14px;border-radius:6px;font-size:12.5px;font-weight:400;letter-spacing:.01em}
+.daychip:hover{color:var(--ink)}
+.daychip.is-on{background:var(--red);color:#fff;font-weight:700}
+
+/* ---------- Métricas ---------- */
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;flex:none}
+.metric{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;position:relative;overflow:hidden}
+.metric::after{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--red);opacity:0;transition:opacity .2s}
+.metric:hover::after{opacity:1}
+.metric .m-label{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-faint)}
+.metric .m-value{font-family:var(--disp);font-weight:700;font-size:30px;line-height:1.05;margin-top:6px;font-variant-numeric:tabular-nums}
+.metric .m-unit{font-size:13px;color:var(--ink-dim);font-family:var(--sans);font-weight:400;margin-left:4px}
+.metric .m-foot{font-size:11px;color:var(--ink-dim);margin-top:5px}
+.metric .m-foot b{color:var(--naranjo);font-weight:700}
+
+/* ---------- Stage: mapa + panel ---------- */
+.stage{display:grid;grid-template-columns:1fr 320px;gap:14px;flex:1;min-height:440px}
+.map-wrap{position:relative;border-radius:var(--r);overflow:hidden;border:1px solid var(--line)}
+#map{position:absolute;inset:0;background:#0b0e13}
+.map-ctl{position:absolute;top:12px;right:12px;z-index:600;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;max-width:70%}
+.ctl-btn{background:rgba(22,26,33,.92);backdrop-filter:blur(6px);border:1px solid var(--line);color:var(--ink-dim);padding:6px 11px;border-radius:7px;font-size:12px}
+.ctl-btn:hover{color:var(--ink)}
+.ctl-btn.is-on{color:#fff;border-color:var(--red);background:rgba(200,16,46,.22)}
+#tg-reset{color:var(--accent-2);border-color:var(--red)}
+
+/* leyenda de coroplético */
+.choro-legend{position:absolute;left:12px;top:12px;z-index:600;background:rgba(22,26,33,.94);backdrop-filter:blur(6px);border:1px solid var(--line);border-radius:9px;padding:10px 12px;max-width:230px}
+.choro-legend h4{font-family:var(--disp);font-size:12px;margin:0 0 3px;color:var(--ink)}
+.choro-legend .cl-sub{font-size:10px;color:var(--ink-faint);margin-bottom:8px}
+.choro-bar{height:10px;border-radius:3px;background:linear-gradient(90deg,#2A313C,var(--naranjo),var(--red));margin-bottom:4px}
+.choro-scale{display:flex;justify-content:space-between;font-size:9.5px;color:var(--ink-dim)}
+.choro-legend .cl-close{position:absolute;top:6px;right:8px;border:0;background:transparent;color:var(--ink-faint);font-size:15px;cursor:pointer}
+.choro-legend .cl-close:hover{color:var(--ink)}
+
+/* ---------- Tótem de parada ---------- */
+.totem{position:absolute;left:12px;bottom:12px;z-index:650;width:288px;max-width:calc(100% - 24px);max-height:calc(100% - 24px);display:flex;flex-direction:column;background:linear-gradient(180deg,#1b212b,#141922);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);overflow:hidden;animation:in .22s cubic-bezier(.2,.7,.2,1)}
+@keyframes in{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.totem-close{position:absolute;top:8px;right:9px;width:24px;height:24px;line-height:22px;border:0;background:transparent;color:var(--ink-faint);font-size:19px;border-radius:6px}
+.totem-close:hover{color:var(--ink);background:rgba(255,255,255,.06)}
+.totem-top{display:flex;align-items:baseline;gap:8px;padding:13px 14px 2px}
+.totem-kicker{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--red);font-weight:700}
+.totem-id{font-family:var(--disp);font-size:16px;font-weight:700;color:var(--ink);letter-spacing:.02em}
+.totem-name{padding:2px 14px 0;font-size:14px;color:var(--ink)}
+.totem-sub{padding:10px 14px 6px;font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-faint);border-top:1px solid var(--line-soft);margin-top:10px}
+.totem-list{list-style:none;margin:0;padding:0 10px 12px;overflow-y:auto}
+.totem-row{display:flex;align-items:center;gap:10px;padding:6px 4px;border:1px solid transparent;border-radius:8px;cursor:pointer;transition:background .12s,border-color .12s}
+.totem-row:hover{background:rgba(255,255,255,.05);border-color:var(--line)}
+.serv-patch{flex:none;min-width:40px;height:27px;padding:0 8px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:var(--disp);font-weight:700;font-size:13px;color:#fff;box-shadow:0 0 0 1px rgba(255,255,255,.16) inset}
+.serv-dest{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--ink);min-width:0}
+.serv-dest .arrow{color:var(--ink-faint);flex:none}
+.serv-dest .dname{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* ---------- Panel derecho ---------- */
+.side-panel{display:flex;flex-direction:column;gap:14px;min-height:0}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:13px 14px;display:flex;flex-direction:column;min-height:0}
+.panel-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:10px}
+.panel-head h2{font-size:14px;letter-spacing:.01em}
+.panel-note{font-size:10.5px;color:var(--ink-faint)}
+.chart-box{position:relative;height:180px}
+.legend-panel{flex:1;min-height:0}
+.legend{list-style:none;margin:0;padding:0;overflow-y:auto;display:flex;flex-direction:column;gap:2px}
+.legend li{display:flex;align-items:center;gap:9px;padding:5px 6px;border-radius:6px;cursor:pointer;border:1px solid transparent}
+.legend li:hover{background:var(--panel-2);border-color:var(--line)}
+.legend li.is-sel{background:var(--panel-2);border-color:var(--red)}
+.legend .lg-patch{width:22px;height:16px;border-radius:4px;flex:none;box-shadow:0 0 0 1px rgba(255,255,255,.15) inset}
+.legend .lg-serv{font-family:var(--disp);font-weight:700;font-size:12.5px;min-width:36px}
+.legend .lg-name{font-size:11.5px;color:var(--ink-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* ---------- Ficha de servicio ---------- */
+.service-dock{flex:none;background:var(--panel);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;animation:in .24s cubic-bezier(.2,.7,.2,1)}
+.dock-head{display:flex;align-items:center;gap:12px;padding:13px 16px;border-bottom:1px solid var(--line-soft)}
+.dock-patch{width:46px;height:31px;border-radius:7px;flex:none;display:flex;align-items:center;justify-content:center;font-family:var(--disp);font-weight:700;font-size:15px;color:#fff;box-shadow:0 0 0 1px rgba(255,255,255,.16) inset}
+.dock-title{flex:1;min-width:0}
+.dock-title h3{font-size:16px}
+.dock-title span{font-size:12px;color:var(--ink-dim)}
+.dock-close{background:transparent;border:1px solid var(--line);color:var(--ink-dim);padding:6px 12px;border-radius:7px;font-size:12px}
+.dock-close:hover{color:#fff;border-color:var(--red);background:var(--red)}
+.dock-body{display:grid;grid-template-columns:1fr 340px;gap:16px;padding:16px}
+.dock-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;align-content:start}
+.dir-switch{grid-column:1/-1;display:flex;gap:6px;background:var(--bg);padding:4px;border-radius:8px;border:1px solid var(--line);width:fit-content}
+.dir-btn{border:0;background:transparent;color:var(--ink-dim);padding:5px 14px;border-radius:6px;font-size:12px;font-family:var(--sans)}
+.dir-btn:hover{color:var(--ink)}
+.dir-btn.is-on{background:var(--red);color:#fff;font-weight:700}
+.dock-metric{background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:12px 14px}
+.dock-metric .dm-label{font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-faint)}
+.dock-metric .dm-value{font-family:var(--disp);font-weight:700;font-size:22px;margin-top:5px;font-variant-numeric:tabular-nums}
+.dock-metric .dm-value small{font-size:12px;color:var(--ink-dim);font-family:var(--sans);font-weight:400;margin-left:3px}
+.dock-metric .dm-foot{font-size:10.5px;color:var(--ink-dim);margin-top:3px}
+.dock-chart{display:flex;flex-direction:column;min-width:0}
+.dock-chart-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px;font-size:12px;color:var(--ink)}
+.sv-chart-box{height:150px}
+
+/* ---------- Panel población (censo) ---------- */
+.censo-panel{flex:none;background:var(--panel);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;animation:in .24s cubic-bezier(.2,.7,.2,1)}
+.censo-head{display:flex;align-items:baseline;gap:12px;padding:13px 16px;border-bottom:1px solid var(--line-soft)}
+.censo-head h2{font-size:16px}
+.censo-scope{font-size:11.5px;color:var(--naranjo)}
+.censo-hint{margin-left:auto;font-size:10.5px;color:var(--ink-faint)}
+.censo-body{display:grid;grid-template-columns:1fr 1.3fr;gap:16px;padding:16px}
+.censo-cards{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;align-content:start}
+.censo-card{background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:12px 14px}
+.censo-card .cz-label{font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-faint)}
+.censo-card .cz-value{font-family:var(--disp);font-weight:700;font-size:23px;margin-top:5px;font-variant-numeric:tabular-nums}
+.censo-card .cz-value small{font-size:12px;color:var(--ink-dim);font-family:var(--sans);font-weight:400;margin-left:3px}
+.censo-card .cz-foot{font-size:10.5px;color:var(--ink-dim);margin-top:3px}
+.censo-card .cz-foot b{color:var(--naranjo);font-weight:700}
+.censo-charts{display:grid;grid-template-columns:1fr 1fr;gap:16px;min-width:0}
+.censo-chart{display:flex;flex-direction:column;min-width:0}
+.cc-title{font-size:12px;color:var(--ink);margin-bottom:4px;display:flex;align-items:center;justify-content:space-between}
+.cc-title .cc-hint{font-size:9.5px;color:var(--ink-faint)}
+.censo-box{height:190px;cursor:pointer}
+
+/* ---------- Loader ---------- */
+.loader{position:fixed;inset:0;z-index:2000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:var(--bg);font-size:12px;color:var(--ink-dim);transition:opacity .3s;letter-spacing:.03em}
+.loader.hide{opacity:0;pointer-events:none}
+.loader .l-logo{display:flex;align-items:center;gap:9px;font-family:var(--disp);font-weight:700;font-size:30px;color:var(--red)}
+.loader .l-logo .dot{width:15px;height:15px;border-radius:50%;background:var(--red);animation:pulse 1.1s ease-in-out infinite}
+@keyframes pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.5);opacity:.5}}
+.loader-bar{width:180px;height:3px;border-radius:2px;background:var(--line);overflow:hidden;position:relative}
+.loader-bar::after{content:"";position:absolute;left:-40%;top:0;bottom:0;width:40%;background:var(--red);animation:slide 1s infinite}
+@keyframes slide{to{left:110%}}
+
+/* ---------- Leaflet skin ---------- */
+.leaflet-container{background:#0b0e13;font-family:var(--sans)}
+.leaflet-control-attribution{background:rgba(14,17,22,.8)!important;color:var(--ink-faint)!important}
+.leaflet-control-attribution a{color:var(--ink-dim)!important}
+.leaflet-bar a{background:var(--panel)!important;color:var(--ink-dim)!important;border-color:var(--line)!important}
+.leaflet-bar a:hover{background:var(--panel-2)!important;color:var(--ink)!important}
+.stop-tip{background:var(--panel-2);border:1px solid var(--line);color:var(--ink);border-radius:6px;padding:3px 7px;font-size:11px;box-shadow:var(--shadow)}
+
+::-webkit-scrollbar{width:9px;height:9px}
+::-webkit-scrollbar-thumb{background:var(--line);border-radius:6px}
+::-webkit-scrollbar-thumb:hover{background:#3a4250}
+::-webkit-scrollbar-track{background:transparent}
+
+@media (max-width:1180px){
+  .dock-body{grid-template-columns:1fr}
+  .dock-metrics{grid-template-columns:repeat(3,1fr)}
+  .censo-body{grid-template-columns:1fr}
+}
+@media (max-width:1080px){
+  .stage{grid-template-columns:1fr;grid-auto-rows:minmax(300px,1fr)}
+  .side-panel{flex-direction:row}
+  .side-panel .panel{flex:1}
+}
+@media (max-width:860px){
+  #app{grid-template-columns:1fr;grid-template-rows:52px auto 1fr;grid-template-areas:"top" "side" "main"}
+  .sidebar{border-right:0;border-bottom:1px solid var(--line);max-height:168px}
+  .zone-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px}
+  .metrics{grid-template-columns:repeat(2,1fr)}
+  .side-panel{flex-direction:column}
+  .dock-metrics{grid-template-columns:repeat(2,1fr)}
+  .censo-charts{grid-template-columns:1fr}
+  .zone-name{font-size:21px}
+}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.001ms!important;transition-duration:.001ms!important}}
