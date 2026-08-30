@@ -43,6 +43,9 @@ jobs:
       - name: Cruce censo (buffer 200 m sobre trazados)
         run: python scripts/cruce_censo.py
 
+      - name: Indexar demanda (APC/TRX) si hay archivos
+        run: python scripts/gen_demanda_index.py || echo "sin demanda aún"
+
       - name: Armar sitio estático
         run: |
           mkdir -p _site
